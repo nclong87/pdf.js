@@ -20,12 +20,20 @@ jobs:
 
     - name: Install Gulp
       run: npm install -g gulp-cli
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      id: npmcache
+      with:
+        path: node_modules
+        key: cache-dependencies-${{ hashFiles('**/package-lock.json') }}
 
     - name: Install other dependencies
+      if: steps.npmcache.outputs.cache-hit != 'true'
       run: npm install
 
-    - name: Build the website
-      run: gulp web
+    - name: Build generic
+      run: gulp generic
     
     - name: Archive artifacts
       uses: actions/upload-artifact@v3
