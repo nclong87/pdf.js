@@ -10,10 +10,10 @@ jobs:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v3
 
-    - name: Use Node.js 18 LTS
+    - name: Use Node.js 16 LTS
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '16'
 
     - name: Install Gulp
       run: npm install -g gulp-cli
