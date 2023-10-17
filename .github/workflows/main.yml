@@ -1,0 +1,32 @@
+name: Cache dependencies
+on:
+    push:
+        branches:
+        - main
+        paths:
+        - '.github/workflows/main.yml'
+        - 'package-lock.json'
+        - 'package.json'
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v3
+
+    - name: Use Node.js 18 LTS
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      id: npmcache
+      with:
+        path: node_modules
+        key: cache-dependencies-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Install other dependencies
+      if: steps.npmcache.outputs.cache-hit != 'true'
+      run: npm install
