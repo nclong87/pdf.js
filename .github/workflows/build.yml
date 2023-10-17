@@ -39,5 +39,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-artifact
-        path: build/gh-pages
+        path: build
         retention-days: 10
