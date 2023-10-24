@@ -85,14 +85,12 @@ See https://github.com/adobe-type-tools/cmap-resources
         }
       }
     </script>
-
     <script src="viewer.js" type="module-shim"></script>
 <!--#endif-->
   </head>
 
-  <body tabindex="1">
+  <body tabindex="1" class="loadingInProgress">
     <div id="outerContainer">
-
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div id="toolbarSidebarLeft">
@@ -223,6 +221,10 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="save_label">Save</span>
             </button>
 
+            <button id="secondaryClose" class="secondaryToolbarButton close visibleMediumView" title="Close" tabindex="53">
+              <span>Close</span>
+            </button>
+
 <!--#if GENERIC-->
             <div class="horizontalToolbarSeparator visibleLargeView"></div>
 <!--#else-->
@@ -341,6 +343,9 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                 <button id="download" class="toolbarButton hiddenMediumView" title="Save" tabindex="33" data-l10n-id="save">
                   <span data-l10n-id="save_label">Save</span>
+                </button>
+                <button onclick="sendRequestClose()" id="close" class="toolbarButton hiddenMediumView" title="Close" tabindex="34">
+                  <span >Close</span>
                 </button>
 
                 <div class="verticalToolbarSeparator hiddenMediumView"></div>

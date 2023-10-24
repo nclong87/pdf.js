@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,6 +52,23 @@ class ViewHistory {
         index = database.files.push({ fingerprint: this.fingerprint }) - 1;
       }
       this.file = database.files[index];
+      if (spaceId) {
+        const pdfSpaces = JSON.parse(
+          localStorage.getItem("pdfBySpace.history")
+        );
+        const fingerprintSpaceId = `${this.file.fingerprint}-${spaceId}`;
+
+        if (pdfSpaces[fingerprintSpaceId]) {
+          this.file.page = pdfSpaces[fingerprintSpaceId];
+        } else {
+          const isOpened = Object.keys(pdfSpaces).find(item =>
+            item.includes(this.file.fingerprint)
+          );
+          if (isOpened) {
+            this.file.page = 1;
+          }
+        }
+      }
       this.database = database;
     });
   }

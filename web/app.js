@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +19,6 @@ import {
   apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
   AutoPrintRegExp,
-  CursorTool,
   DEFAULT_SCALE_VALUE,
   getActiveOrFocusedElement,
   isValidRotation,
@@ -804,7 +804,10 @@ const PDFViewerApplication = {
   },
 
   zoomIn(steps, scaleFactor) {
-    if (this.pdfViewer.isInPresentationMode) {
+    if (
+      this.pdfViewer.isInPresentationMode ||
+      this.pdfViewer.container.classList.contains("onlyView")
+    ) {
       return;
     }
     this.pdfViewer.increaseScale({
@@ -815,7 +818,10 @@ const PDFViewerApplication = {
   },
 
   zoomOut(steps, scaleFactor) {
-    if (this.pdfViewer.isInPresentationMode) {
+    if (
+      this.pdfViewer.isInPresentationMode ||
+      this.pdfViewer.container.classList.contains("onlyView")
+    ) {
       return;
     }
     this.pdfViewer.decreaseScale({
@@ -1279,15 +1285,22 @@ const PDFViewerApplication = {
   },
 
   load(pdfDocument) {
+    if (!pdfDocument) {
+      return;
+    }
     this.pdfDocument = pdfDocument;
-
+    const pagesCount = pdfDocument.numPages;
     pdfDocument.getDownloadInfo().then(({ length }) => {
       this._contentLength = length; // Ensure that the correct length is used.
       this.downloadComplete = true;
       this.loadingBar?.hide();
 
       firstPagePromise.then(() => {
-        this.eventBus.dispatch("documentloaded", { source: this });
+        this.eventBus.dispatch("documentloaded", {
+          source: this,
+          pagesCount,
+          materialId: materialId || null,
+        });
       });
     });
 
@@ -2085,6 +2098,13 @@ const PDFViewerApplication = {
       "updatefromsandbox",
       _boundEvents.windowUpdateFromSandbox
     );
+    // Todo-custom
+    document.addEventListener("onResourceChanged", webViewerResourceChanged);
+    document.addEventListener("onPageChanged", webViewerPageChanged);
+    document.addEventListener(
+      "onPresentationStarted",
+      webViewerPresentationStarted
+    );
   },
 
   unbindEvents() {
@@ -2525,7 +2545,13 @@ function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
 function webViewerDownload() {
-  PDFViewerApplication.downloadOrSave();
+  if (resourceObj && resourceObj.downloadable === true) {
+    PDFViewerApplication.downloadOrSave();
+    PDFViewerApplication.eventBus.dispatch("documentDownloaded", {
+      source: this,
+      materialId: materialId || null,
+    });
+  }
 }
 function webViewerOpenInExternalApp() {
   PDFViewerApplication.openInExternalApp();
@@ -2665,6 +2691,14 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
   PDFViewerApplication.toolbar?.updateLoadingIndicatorState(
     currentPage?.renderingState === RenderingStates.RUNNING
   );
+  if (spaceId) {
+    const fingerprint = PDFViewerApplication.pdfViewer.pdfDocument.fingerprint;
+    const fingerprintSpaceId = `${fingerprint}-${spaceId}`;
+    const pdfBySpace =
+      JSON.parse(localStorage.getItem("pdfBySpace.history")) || {};
+    pdfBySpace[fingerprintSpaceId] = pageNumber;
+    localStorage.setItem("pdfBySpace.history", JSON.stringify(pdfBySpace));
+  }
 }
 
 function webViewerResolutionChange(evt) {
@@ -2979,7 +3013,7 @@ function webViewerKeyDown(evt) {
   if (PDFViewerApplication.overlayManager.active) {
     return;
   }
-  const { eventBus, pdfViewer } = PDFViewerApplication;
+  const { pdfViewer } = PDFViewerApplication;
   const isViewerInPresentationMode = pdfViewer.isInPresentationMode;
 
   let handled = false,
@@ -2992,121 +3026,102 @@ function webViewerKeyDown(evt) {
 
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
-  if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
-    // either CTRL or META key with optional SHIFT.
-    switch (evt.keyCode) {
-      case 70: // f
-        if (!PDFViewerApplication.supportsIntegratedFind && !evt.shiftKey) {
-          PDFViewerApplication.findBar?.open();
-          handled = true;
-        }
-        break;
-      case 71: // g
-        if (!PDFViewerApplication.supportsIntegratedFind) {
-          const { state } = PDFViewerApplication.findController;
-          if (state) {
-            const newState = {
-              source: window,
-              type: "again",
-              findPrevious: cmd === 5 || cmd === 12,
-            };
-            eventBus.dispatch("find", { ...state, ...newState });
-          }
-          handled = true;
-        }
-        break;
-      case 61: // FF/Mac '='
-      case 107: // FF '+' and '='
-      case 187: // Chrome '+'
-      case 171: // FF with German keyboard
-        PDFViewerApplication.zoomIn();
-        handled = true;
-        break;
-      case 173: // FF/Mac '-'
-      case 109: // FF '-'
-      case 189: // Chrome '-'
-        PDFViewerApplication.zoomOut();
-        handled = true;
-        break;
-      case 48: // '0'
-      case 96: // '0' on Numpad of Swedish keyboard
-        if (!isViewerInPresentationMode) {
-          // keeping it unhandled (to restore page zoom to 100%)
-          setTimeout(function () {
-            // ... and resetting the scale after browser adjusts its scale
-            PDFViewerApplication.zoomReset();
-          });
-          handled = false;
-        }
-        break;
+  // if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
+  //   // either CTRL or META key with optional SHIFT.
+  //   switch (evt.keyCode) {
+  //     case 70: // f
+  //       if (!PDFViewerApplication.supportsIntegratedFind && !evt.shiftKey) {
+  //         PDFViewerApplication.findBar?.open();
+  //         handled = true;
+  //       }
+  //       break;
+  //     case 71: // g
+  //       if (!PDFViewerApplication.supportsIntegratedFind) {
+  //         const { state } = PDFViewerApplication.findController;
+  //         if (state) {
+  //           const newState = {
+  //             source: window,
+  //             type: "again",
+  //             findPrevious: cmd === 5 || cmd === 12,
+  //           };
+  //           eventBus.dispatch("find", { ...state, ...newState });
+  //         }
+  //         handled = true;
+  //       }
+  //       break;
+  //     case 61: // FF/Mac '='
+  //     case 107: // FF '+' and '='
+  //     case 187: // Chrome '+'
+  //     case 171: // FF with German keyboard
+  //       PDFViewerApplication.zoomIn();
+  //       handled = true;
+  //       break;
+  //     case 173: // FF/Mac '-'
+  //     case 109: // FF '-'
+  //     case 189: // Chrome '-'
+  //       PDFViewerApplication.zoomOut();
+  //       handled = true;
+  //       break;
+  //     case 48: // '0'
+  //     case 96: // '0' on Numpad of Swedish keyboard
+  //       if (!isViewerInPresentationMode) {
+  //         // keeping it unhandled (to restore page zoom to 100%)
+  //         setTimeout(function () {
+  //           // ... and resetting the scale after browser adjusts its scale
+  //           PDFViewerApplication.zoomReset();
+  //         });
+  //         handled = false;
+  //       }
+  //       break;
 
-      case 38: // up arrow
-        if (isViewerInPresentationMode || PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page = 1;
-          handled = true;
-          ensureViewerFocused = true;
-        }
-        break;
-      case 40: // down arrow
-        if (
-          isViewerInPresentationMode ||
-          PDFViewerApplication.page < PDFViewerApplication.pagesCount
-        ) {
-          PDFViewerApplication.page = PDFViewerApplication.pagesCount;
-          handled = true;
-          ensureViewerFocused = true;
-        }
-        break;
-    }
-  }
+  //     case 38: // up arrow
+  //       if (isViewerInPresentationMode || PDFViewerApplication.page > 1) {
+  //         PDFViewerApplication.page = 1;
+  //         handled = true;
+  //         ensureViewerFocused = true;
+  //       }
+  //       break;
+  //     case 40: // down arrow
+  //       if (
+  //         isViewerInPresentationMode ||
+  //         PDFViewerApplication.page < PDFViewerApplication.pagesCount
+  //       ) {
+  //         PDFViewerApplication.page = PDFViewerApplication.pagesCount;
+  //         handled = true;
+  //         ensureViewerFocused = true;
+  //       }
+  //       break;
+  //   }
+  // }
 
-  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
-    // CTRL or META without shift
-    if (cmd === 1 || cmd === 8) {
-      switch (evt.keyCode) {
-        case 83: // s
-          eventBus.dispatch("download", { source: window });
-          handled = true;
-          break;
+  // // CTRL+ALT or Option+Command
+  // if (cmd === 3 || cmd === 10) {
+  //   switch (evt.keyCode) {
+  //     case 80: // p
+  //       PDFViewerApplication.requestPresentationMode();
+  //       handled = true;
+  //       PDFViewerApplication.externalServices.reportTelemetry({
+  //         type: "buttons",
+  //         data: { id: "presentationModeKeyboard" },
+  //       });
+  //       break;
+  //     case 71: // g
+  //       // focuses input#pageNumber field
+  //       if (PDFViewerApplication.appConfig.toolbar) {
+  //         PDFViewerApplication.appConfig.toolbar.pageNumber.select();
+  //         handled = true;
+  //       }
+  //       break;
+  //   }
+  // }
 
-        case 79: // o
-          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-            eventBus.dispatch("openfile", { source: window });
-            handled = true;
-          }
-          break;
-      }
-    }
-  }
-
-  // CTRL+ALT or Option+Command
-  if (cmd === 3 || cmd === 10) {
-    switch (evt.keyCode) {
-      case 80: // p
-        PDFViewerApplication.requestPresentationMode();
-        handled = true;
-        PDFViewerApplication.externalServices.reportTelemetry({
-          type: "buttons",
-          data: { id: "presentationModeKeyboard" },
-        });
-        break;
-      case 71: // g
-        // focuses input#pageNumber field
-        if (PDFViewerApplication.appConfig.toolbar) {
-          PDFViewerApplication.appConfig.toolbar.pageNumber.select();
-          handled = true;
-        }
-        break;
-    }
-  }
-
-  if (handled) {
-    if (ensureViewerFocused && !isViewerInPresentationMode) {
-      pdfViewer.focus();
-    }
-    evt.preventDefault();
-    return;
-  }
+  // if (handled) {
+  //   if (ensureViewerFocused && !isViewerInPresentationMode) {
+  //     pdfViewer.focus();
+  //   }
+  //   evt.preventDefault();
+  //   return;
+  // }
 
   // Some shortcuts should not get handled if a control/input element
   // is selected.
@@ -3153,19 +3168,19 @@ function webViewerKeyDown(evt) {
       case 80: // 'p'
         turnPage = -1;
         break;
-      case 27: // esc key
-        if (PDFViewerApplication.secondaryToolbar?.isOpen) {
-          PDFViewerApplication.secondaryToolbar.close();
-          handled = true;
-        }
-        if (
-          !PDFViewerApplication.supportsIntegratedFind &&
-          PDFViewerApplication.findBar?.opened
-        ) {
-          PDFViewerApplication.findBar.close();
-          handled = true;
-        }
-        break;
+      // case 27: // esc key
+      //   if (PDFViewerApplication.secondaryToolbar?.isOpen) {
+      //     PDFViewerApplication.secondaryToolbar.close();
+      //     handled = true;
+      //   }
+      //   if (
+      //     !PDFViewerApplication.supportsIntegratedFind &&
+      //     PDFViewerApplication.findBar?.opened
+      //   ) {
+      //     PDFViewerApplication.findBar.close();
+      //     handled = true;
+      //   }
+      //   break;
       case 40: // down arrow
       case 34: // pg down
         // vertical scrolling using arrow/pg keys
@@ -3209,21 +3224,6 @@ function webViewerKeyDown(evt) {
           ensureViewerFocused = true;
         }
         break;
-
-      case 83: // 's'
-        PDFViewerApplication.pdfCursorTools?.switchTool(CursorTool.SELECT);
-        break;
-      case 72: // 'h'
-        PDFViewerApplication.pdfCursorTools?.switchTool(CursorTool.HAND);
-        break;
-
-      case 82: // 'r'
-        PDFViewerApplication.rotatePages(90);
-        break;
-
-      case 115: // F4
-        PDFViewerApplication.pdfSidebar?.toggle();
-        break;
     }
 
     if (
@@ -3236,28 +3236,6 @@ function webViewerKeyDown(evt) {
         pdfViewer.previousPage();
       }
       handled = true;
-    }
-  }
-
-  // shift-key
-  if (cmd === 4) {
-    switch (evt.keyCode) {
-      case 13: // enter key
-      case 32: // spacebar
-        if (
-          !isViewerInPresentationMode &&
-          pdfViewer.currentScaleValue !== "page-fit"
-        ) {
-          break;
-        }
-        pdfViewer.previousPage();
-
-        handled = true;
-        break;
-
-      case 82: // 'r'
-        PDFViewerApplication.rotatePages(-90);
-        break;
     }
   }
 
@@ -3282,6 +3260,150 @@ function webViewerKeyDown(evt) {
 
   if (handled) {
     evt.preventDefault();
+  }
+}
+
+let isLoaded = false;
+function webViewerResourceChanged() {
+  console.log("onResourceChanged evt", resourceObj);
+  let triedCount = 0;
+
+  function loadPdf() {
+    try {
+      if (resourceObj) {
+        webViewerOpenFileViaURL(resourceObj);
+        triedCount = -1;
+        isLoaded = true;
+      }
+    } catch (reason) {
+      triedCount += 1;
+      if (triedCount === 3) {
+        PDFViewerApplication.l10n.get("loading_error").then(msg => {
+          PDFViewerApplication._documentError(msg, {
+            message: reason,
+          });
+        });
+      }
+    }
+  }
+  console.log("isLoaded", isLoaded);
+  while (triedCount >= 0 && triedCount < 3 && !isLoaded) {
+    console.log("triedCount", triedCount);
+    loadPdf();
+  }
+}
+
+function webViewerPageChanged(evt) {
+  PDFViewerApplication.page = evt.detail;
+}
+
+function webViewerPresentationStarted(evt) {
+  const appConfig = PDFViewerApplication.appConfig;
+  const { isPresenter } = evt.detail;
+  // console.log('onPresentationModeRequested', appConfig.viewerContainer);
+  const { pdfDocument, pdfViewer } = PDFViewerApplication;
+
+  if (!pdfDocument) {
+    return;
+  }
+
+  pdfViewer.currentScaleValue = "page-fit";
+
+  if (isPresenter) {
+    // PDFViewerApplication.page = 1;
+  } else {
+    window.removeEventListener("keydown", webViewerKeyDown);
+    appConfig.toolbar.container.classList.add("hidden");
+    appConfig.mainContainer.classList.add("presentationMode");
+    appConfig.mainContainer.classList.add("onlyView");
+  }
+  pdfViewer.update();
+}
+function webViewerOpenFileViaURL({ src, downloadable, popup, preview }) {
+  const appConfig = PDFViewerApplication.appConfig;
+  if (preview === true) {
+    appConfig.sidebar.outerContainer.classList.add("preview");
+    appConfig.toolbar.wrapper.classList.add("hidden");
+    appConfig.sidebar.container.classList.add("hidden");
+    appConfig.mainContainer.classList.add(
+      "presentationMode",
+      "onlyView",
+      "preview"
+    );
+  } else {
+    appConfig.sidebar.outerContainer.classList.remove("preview");
+    appConfig.toolbar.wrapper.classList.remove("hidden");
+    appConfig.sidebar.container.classList.remove("hidden");
+    appConfig.mainContainer.classList.remove(
+      "presentationMode",
+      "onlyView",
+      "preview"
+    );
+    if (downloadable === false) {
+      appConfig.toolbar.download.setAttribute("hidden", "true");
+      appConfig.secondaryToolbar.downloadButton.setAttribute("hidden", "true");
+    } else if (downloadable === true) {
+      appConfig.toolbar.download.removeAttribute("hidden");
+      appConfig.secondaryToolbar.downloadButton.removeAttribute("hidden");
+    }
+  }
+  if (popup === false) {
+    appConfig.toolbar.close.setAttribute("hidden", "true");
+    appConfig.secondaryToolbar.closeButton.setAttribute("hidden", "true");
+  } else if (popup === true) {
+    appConfig.toolbar.close.removeAttribute("hidden");
+    appConfig.secondaryToolbar.closeButton.removeAttribute("hidden");
+  }
+  if (!src) {
+    return;
+  }
+  if (typeof src === "object") {
+    const file = src;
+
+    if (
+      URL.createObjectURL &&
+      !_app_options.AppOptions.get("disableCreateObjectURL")
+    ) {
+      let url = URL.createObjectURL(file);
+
+      if (file.name) {
+        url = {
+          url,
+          originalUrl: file.name,
+        };
+      }
+
+      PDFViewerApplication.open(url);
+    } else {
+      PDFViewerApplication.setTitleUsingUrl(file.name);
+      const fileReader = new FileReader();
+
+      fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
+        const buffer = evt.target.result;
+        PDFViewerApplication.open(new Uint8Array(buffer));
+      };
+
+      fileReader.readAsArrayBuffer(file);
+    }
+    return;
+  }
+  if (src.lastIndexOf("file:", 0) === 0) {
+    PDFViewerApplication.setTitleUsingUrl(src);
+    const xhr = new XMLHttpRequest();
+
+    xhr.onload = function () {
+      PDFViewerApplication.open(new Uint8Array(xhr.response));
+    };
+
+    xhr.open("GET", src);
+    xhr.responseType = "arraybuffer";
+    xhr.send();
+    return;
+  }
+
+  if (src) {
+    console.log("src: ", src);
+    PDFViewerApplication.open({ url: src });
   }
 }
 

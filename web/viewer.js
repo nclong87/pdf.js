@@ -42,6 +42,7 @@ function getViewerConfiguration() {
     mainContainer: document.getElementById("viewerContainer"),
     viewerContainer: document.getElementById("viewer"),
     toolbar: {
+      wrapper: document.getElementById("toolbarContainer"),
       container: document.getElementById("toolbarViewer"),
       numPages: document.getElementById("numPages"),
       pageNumber: document.getElementById("pageNumber"),
@@ -57,6 +58,7 @@ function getViewerConfiguration() {
           ? document.getElementById("openFile")
           : null,
       print: document.getElementById("print"),
+      close: document.getElementById("close"),
       editorFreeTextButton: document.getElementById("editorFreeText"),
       editorFreeTextParamsToolbar: document.getElementById(
         "editorFreeTextParamsToolbar"
@@ -78,6 +80,7 @@ function getViewerConfiguration() {
           ? document.getElementById("secondaryOpenFile")
           : null,
       printButton: document.getElementById("secondaryPrint"),
+      closeButton: document.getElementById("secondaryClose"),
       downloadButton: document.getElementById("secondaryDownload"),
       viewBookmarkButton: document.getElementById("viewBookmark"),
       firstPageButton: document.getElementById("firstPage"),
@@ -97,6 +100,7 @@ function getViewerConfiguration() {
     },
     sidebar: {
       // Divs (and sidebar button)
+      container: document.getElementById("sidebarContainer"),
       outerContainer: document.getElementById("outerContainer"),
       sidebarContainer: document.getElementById("sidebarContainer"),
       toggleButton: document.getElementById("sidebarToggle"),
@@ -219,7 +223,12 @@ if (
   document.readyState === "interactive" ||
   document.readyState === "complete"
 ) {
-  webViewerLoad();
+  try {
+    webViewerLoad();
+  } catch (ex) {
+    console.log(ex);
+    location.reload();
+  }
 } else {
   document.addEventListener("DOMContentLoaded", webViewerLoad, true);
 }
