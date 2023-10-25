@@ -70,8 +70,5 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "pdfjs-dist": "^3.11.174"
-  }
+  "license": "Apache-2.0"
 }
