@@ -85,14 +85,12 @@ See https://github.com/adobe-type-tools/cmap-resources
         }
       }
     </script>
-
     <script src="viewer.js" type="module-shim"></script>
 <!--#endif-->
   </head>
 
-  <body tabindex="1">
+  <body tabindex="1" class="loadingInProgress">
     <div id="outerContainer">
-
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div id="toolbarSidebarLeft">
@@ -223,6 +221,10 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="save_label">Save</span>
             </button>
 
+            <button id="secondaryClose" class="secondaryToolbarButton close visibleMediumView" title="Close" tabindex="53">
+              <span>Close</span>
+            </button>
+
 <!--#if GENERIC-->
             <div class="horizontalToolbarSeparator visibleLargeView"></div>
 <!--#else-->
@@ -329,6 +331,32 @@ See https://github.com/adobe-type-tools/cmap-resources
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
+                <div class="splitToolbarButton">
+                  <button id="zoomOut" class="toolbarButton" title="Zoom Out" tabindex="21" data-l10n-id="zoom_out">
+                    <span data-l10n-id="zoom_out_label">Zoom Out</span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button id="zoomIn" class="toolbarButton" title="Zoom In" tabindex="22" data-l10n-id="zoom_in">
+                    <span data-l10n-id="zoom_in_label">Zoom In</span>
+                    </button>
+                </div>
+                <span id="scaleSelectContainer" class="dropdownToolbarButton" >
+                  <select id="scaleSelect" title="Zoom" tabindex="23" data-l10n-id="zoom">
+                    <option id="pageAutoOption" title="" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
+                    <option id="pageActualOption" title="" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
+                    <option id="pageFitOption" title="" value="page-fit" data-l10n-id="page_scale_fit">Page Fit</option>
+                    <option id="pageWidthOption" title="" value="page-width" data-l10n-id="page_scale_width">Page Width</option>
+                    <option id="customScaleOption" title="" value="custom" disabled="disabled" hidden="true"></option>
+                    <option title="" value="0.5" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 50 }'>50%</option>
+                    <option title="" value="0.75" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 75 }'>75%</option>
+                    <option title="" value="1" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 100 }'>100%</option>
+                    <option title="" value="1.25" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 125 }'>125%</option>
+                    <option title="" value="1.5" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 150 }'>150%</option>
+                    <option title="" value="2" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 200 }'>200%</option>
+                    <option title="" value="3" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 300 }'>300%</option>
+                    <option title="" value="4" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 400 }'>400%</option>
+                  </select>
+                </span>
 <!--#if GENERIC-->
                 <button id="openFile" class="toolbarButton hiddenLargeView" title="Open File" tabindex="31" data-l10n-id="open_file">
                   <span data-l10n-id="open_file_label">Open</span>
@@ -341,6 +369,9 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                 <button id="download" class="toolbarButton hiddenMediumView" title="Save" tabindex="33" data-l10n-id="save">
                   <span data-l10n-id="save_label">Save</span>
+                </button>
+                <button onclick="sendRequestClose()" id="close" class="toolbarButton hiddenMediumView" title="Close" tabindex="34">
+                  <span >Close</span>
                 </button>
 
                 <div class="verticalToolbarSeparator hiddenMediumView"></div>
@@ -364,32 +395,6 @@ See https://github.com/adobe-type-tools/cmap-resources
                 </button>
               </div>
               <div id="toolbarViewerMiddle">
-                <div class="splitToolbarButton">
-                  <button id="zoomOut" class="toolbarButton" title="Zoom Out" tabindex="21" data-l10n-id="zoom_out">
-                    <span data-l10n-id="zoom_out_label">Zoom Out</span>
-                  </button>
-                  <div class="splitToolbarButtonSeparator"></div>
-                  <button id="zoomIn" class="toolbarButton" title="Zoom In" tabindex="22" data-l10n-id="zoom_in">
-                    <span data-l10n-id="zoom_in_label">Zoom In</span>
-                   </button>
-                </div>
-                <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                  <select id="scaleSelect" title="Zoom" tabindex="23" data-l10n-id="zoom">
-                    <option id="pageAutoOption" title="" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
-                    <option id="pageActualOption" title="" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
-                    <option id="pageFitOption" title="" value="page-fit" data-l10n-id="page_scale_fit">Page Fit</option>
-                    <option id="pageWidthOption" title="" value="page-width" data-l10n-id="page_scale_width">Page Width</option>
-                    <option id="customScaleOption" title="" value="custom" disabled="disabled" hidden="true"></option>
-                    <option title="" value="0.5" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 50 }'>50%</option>
-                    <option title="" value="0.75" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 75 }'>75%</option>
-                    <option title="" value="1" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 100 }'>100%</option>
-                    <option title="" value="1.25" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 125 }'>125%</option>
-                    <option title="" value="1.5" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 150 }'>150%</option>
-                    <option title="" value="2" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 200 }'>200%</option>
-                    <option title="" value="3" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 300 }'>300%</option>
-                    <option title="" value="4" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 400 }'>400%</option>
-                  </select>
-                </span>
               </div>
             </div>
             <div id="loadingBar">

@@ -131,6 +131,8 @@ class TextLayerBuilder {
     this.#finishRendering();
     this.#scale = scale;
     this.#rotation = rotation;
+    // eslint-disable-next-line no-unsanitized/property, no-undef
+    this.div.innerHTML = autolinker.link(this.div.innerHTML);
     this.show();
     this.accessibilityManager?.enable();
   }

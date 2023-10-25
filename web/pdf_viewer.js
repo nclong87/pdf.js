@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -414,6 +415,7 @@ class PDFViewer {
       pageNumber: val,
       pageLabel: this._pageLabels?.[val - 1] ?? null,
       previous,
+      materialId: materialId || null,
     });
 
     if (resetCurrentPageView) {

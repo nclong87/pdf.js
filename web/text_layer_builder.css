@@ -38,6 +38,10 @@
   z-index: 2;
 }
 
+.textLayer a.external-link {
+  color: transparent !important;
+}
+
 .textLayer :is(span, br) {
   color: transparent;
   position: absolute;

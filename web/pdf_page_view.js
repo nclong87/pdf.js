@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -653,6 +654,7 @@ class PDFPageView {
           cssTransform: true,
           timestamp: performance.now(),
           error: this.#renderError,
+          materialId: materialId || null,
         });
         return;
       }
