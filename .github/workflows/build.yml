@@ -34,12 +34,6 @@ jobs:
 
     - name: Build generic
       run: gulp generic
-
-    - name: Minify-JS Action
-      uses: jossydevers/minify-js@v1.0.0
-      with:
-        directory: 'build/generic/web/viewer.js' # (OPTIONAL)
-        output: 'build/generic/web/' # (OPTIONAL)
     
     - name: Archive artifacts
       uses: actions/upload-artifact@v3
