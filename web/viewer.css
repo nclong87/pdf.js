@@ -305,6 +305,20 @@ body {
   inset: 32px 0 0;
   outline: none;
 }
+
+/* todo-custom */
+#viewerContainer.presentationMode {
+  overflow: hidden!important;
+}
+
+#viewerContainer.preview{
+  top: 0px;
+}
+
+#outerContainer.preview{
+  pointer-events: none;
+}
+
 #viewerContainer:not(.pdfPresentationMode) {
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
