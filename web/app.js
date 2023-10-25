@@ -2711,7 +2711,8 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
     currentPage?.renderingState === RenderingStates.RUNNING
   );
   if (spaceId) {
-    const fingerprint = PDFViewerApplication.pdfViewer.pdfDocument.fingerprint;
+    const fingerprint =
+      PDFViewerApplication.pdfViewer.pdfDocument.fingerprints?.[0];
     const fingerprintSpaceId = `${fingerprint}-${spaceId}`;
     const pdfBySpace =
       JSON.parse(localStorage.getItem("pdfBySpace.history")) || {};
