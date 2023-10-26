@@ -108,7 +108,7 @@ const defaultOptions = {
     // in Firefox release, but it has to be temporary.
     // TODO: remove it when unnecessary.
     /** @type {boolean} */
-    value: true,
+    value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   externalLinkRel: {
