@@ -3361,10 +3361,12 @@ function webViewerOpenFileViaURL({ src, downloadable, popup, preview }) {
     );
     if (downloadable === false) {
       appConfig.toolbar.download.setAttribute("hidden", "true");
+      appConfig.toolbar.print.setAttribute("hidden", "true");
       appConfig.secondaryToolbar.downloadButton.setAttribute("hidden", "true");
       appConfig.secondaryToolbar.printButton.setAttribute("hidden", "true");
     } else if (downloadable === true) {
       appConfig.toolbar.download.removeAttribute("hidden");
+      appConfig.toolbar.print.removeAttribute("hidden");
       appConfig.secondaryToolbar.downloadButton.removeAttribute("hidden");
       appConfig.secondaryToolbar.printButton.removeAttribute("hidden");
     }
