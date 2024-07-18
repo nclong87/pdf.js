@@ -313,10 +313,12 @@ window.addEventListener(
       !event.altKey &&
       (!event.shiftKey || window.chrome || window.opera)
     ) {
-      window.print();
-
-      event.preventDefault();
-      event.stopImmediatePropagation();
+      // eslint-disable-next-line no-undef
+      if (resourceObj && resourceObj.downloadable === true) {
+        window.print();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
     }
   },
   true
