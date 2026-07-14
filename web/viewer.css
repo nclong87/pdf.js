@@ -308,14 +308,14 @@ body {
 
 /* todo-custom */
 #viewerContainer.presentationMode {
-  overflow: hidden!important;
+  overflow: hidden !important;
 }
 
-#viewerContainer.preview{
+#viewerContainer.preview {
   top: 0px;
 }
 
-#outerContainer.preview{
+#outerContainer.preview {
   pointer-events: none;
 }
 
@@ -1119,6 +1119,7 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   width: 40px;
   background-size: 0 0;
   transition-property: none;
+  margin-left: 4px;
 }
 #pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
